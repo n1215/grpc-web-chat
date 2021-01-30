@@ -1,0 +1,17 @@
+version: "3"
+services:
+  dotnet:
+    image: mcr.microsoft.com/dotnet/sdk:5.0-focal
+    ports:
+      - 5000:5000
+    working_dir: /app
+    volumes:
+      - ./server-dotnet:/app
+      - ./protos:/app/Protos
+    command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000"]
+
+  protoc:
+    image: namely/protoc-all
+    volumes:
+      - ./protos:/defs
+      - ./client-grpc-web-text/src/pb-web:/out/grpc-web-text

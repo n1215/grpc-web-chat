@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option csharp_namespace = "GrpcWebChat";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package GrpcWebChat;
+
+service Chat {
+  rpc SendMessage (SendMessageRequest) returns (google.protobuf.Empty);
+  rpc Subscribe (google.protobuf.Empty) returns (stream ChatMessage);
+}
+
+message SendMessageRequest {
+  string body = 1;
+  string name = 2;
+}
+
+message ChatMessage {
+  string body = 1;
+  string name = 2;
+  google.protobuf.Timestamp date = 3;
+}
