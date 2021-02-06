@@ -33,7 +33,7 @@ const initialModel = (): Model => {
   }
 }
 const model = initialModel()
-const chatClient = new ChatClient('https://localhost:5001')
+const chatClient = new ChatClient('http://localhost:5000')
 
 window.onload = () => {
   const $views = {
