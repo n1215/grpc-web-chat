@@ -85,6 +85,7 @@ window.onload = () => {
             console.error(err);
          }
       });
+      $views.bodyInput.value = "";
    });
    
    // チャットメッセージ購読を設定
