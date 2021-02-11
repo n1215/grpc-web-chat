@@ -1,0 +1,33 @@
+{
+    "name": "n1215/grpc-web-chat-amphp",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "ext-grpc": "*",
+        "ext-pcntl": "*",
+        "amphp/http-server": "^2.1",
+        "amphp/http-server-router": "^1.0",
+        "amphp/log": "^1.1",
+        "google/protobuf": "^3.14",
+        "grpc/grpc": "^1.35",
+        "monolog/monolog": "^2.2",
+        "reactivex/rxphp": "^2.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "n1215",
+            "email": "knakae1215@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "N1215\\GrpcWebChatAmp\\": "src/",
+            "GPBMetadata\\": "lib/GPBMetadata/",
+            "GrpcWebChat\\": "lib/GrpcWebChat/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

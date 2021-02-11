@@ -11,9 +11,32 @@ services:
       - ./protos:/app/Protos
     command: ["dotnet", "watch", "run"]
 
+  envoy:
+    image: envoyproxy/envoy:v1.17-latest
+    ports:
+      - 9901:9901
+      - 9000:9000
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./certs:/etc/certs:ro
+    command:
+      - "/usr/local/bin/envoy"
+      - "--bootstrap-version"
+      - "2"
+      - "-c"
+      - "/etc/envoy/envoy.yaml"
+  amphp:
+    build: ./server-amphp
+    ports:
+      - 1338:1338
+    volumes:
+      - ./server-amphp:/var/www
+      - ./certs:/etc/certs:ro
+
   protoc:
     image: namely/protoc-all
     volumes:
       - ./protos:/defs
       - ./client-grpc-web-text/src/pb-web:/out/grpc-web-text
       - ./client-grpc-web/src/pb-web:/out/grpc-web
+      - ./server-amphp/lib:/out/grpc-php

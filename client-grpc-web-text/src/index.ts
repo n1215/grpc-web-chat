@@ -33,7 +33,7 @@ const initialModel = (): Model => {
   }
 }
 const model = initialModel()
-const chatClient = new ChatClient('https://localhost:5001')
+const chatClient = new ChatClient('https://localhost:9000')
 
 window.onload = () => {
   const $views = {
@@ -95,9 +95,9 @@ window.onload = () => {
     model.addChatMessage(chatMessage)
   })
   chatMessageStream.on('status', (status: Status) => {
-    console.debug('status', status)
+    console.log('status', status)
   })
   chatMessageStream.on('end', () => {
-    console.debug('stream end')
+    console.log('stream end')
   })
 }
