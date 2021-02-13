@@ -6,21 +6,17 @@ namespace N1215\GrpcWebChatAmp\Handlers;
 
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
-use Amp\Http\Server\Response;
-use Amp\Http\Server\Trailers;
-use Amp\Http\Status;
 use Amp\Promise;
 use Amp\Success;
 use DateTime;
-use Exception;
-use Generator;
+use N1215\GrpcWebChatAmp\Grpc\RequestBodyDeserializer;
 use Google\Protobuf\GPBEmpty;
 use Google\Protobuf\Timestamp;
 use GrpcWebChat\ChatMessage;
 use GrpcWebChat\SendMessageRequest;
 use N1215\GrpcWebChatAmp\Grpc\LengthPrefixedMessage;
+use N1215\GrpcWebChatAmp\Grpc\ResponseFactory;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Rx\ObserverInterface;
 
 use function Amp\call;
@@ -31,15 +27,13 @@ use function Amp\call;
  */
 class SendMessageRequestHandler implements RequestHandler
 {
-    /**
-     * SendMessageRequestHandler constructor.
-     * @param ObserverInterface<ChatMessage> $chatMessageObserver
-     * @param LoggerInterface $logger
-     */
     public function __construct(
         private ObserverInterface $chatMessageObserver,
+        private RequestBodyDeserializer $requestBodyDeserializer,
+        private ResponseFactory $responseFactory,
         private LoggerInterface $logger
-    ) {}
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -47,53 +41,36 @@ class SendMessageRequestHandler implements RequestHandler
      */
     public function handleRequest(Request $request): Promise
     {
-        return call([$this, 'handle'], $request);
+        return call(
+            function ($request) {
+                $serviceRequest = new SendMessageRequest();
+                yield $this->requestBodyDeserializer->deserialize($request, $serviceRequest);
+
+                $serviceResponse = yield $this->service($serviceRequest);
+
+                $stream = (new LengthPrefixedMessage($serviceResponse))->serializeToString();
+                return $this->responseFactory->success($stream);
+            },
+            $request
+        );
     }
 
     /**
-     * @param Request $request
-     * @return Generator
+     * @param SendMessageRequest $request
+     * @return Promise<GPBEmpty>
      */
-    public function handle(Request $request): Generator
+    private function service(SendMessageRequest $request): Promise
     {
-        $contents = yield $request->getBody()->buffer();
-
-        $sendMessageRequest = new SendMessageRequest();
-        try {
-            $sendMessageRequest->mergeFromString(LengthPrefixedMessage::unwrap($contents));
-        } catch (Exception $e) {
-            throw new RuntimeException('failed to parse request body.', 0, $e);
-        }
-
         $date = new Timestamp();
         $date->fromDateTime(new DateTime());
         $chatMessage = new ChatMessage();
-        $chatMessage->setBody($sendMessageRequest->getBody());
-        $chatMessage->setName($sendMessageRequest->getName());
+        $chatMessage->setBody($request->getBody());
+        $chatMessage->setName($request->getName());
         $chatMessage->setDate($date);
+
+        // publish chat message
         $this->chatMessageObserver->onNext($chatMessage);
 
-        $trailers = new Trailers(
-            new Success(
-                [
-                    'grpc-status' => '0',
-                    'grpc-message' => 'OK'
-                ]
-            ),
-            ['grpc-stats', 'grpc-message']
-        );
-
-        $message = new GPBEmpty();
-        $stream = (new LengthPrefixedMessage($message))->serializeToString();
-
-        return new Response(
-            Status::OK,
-            [
-                'content-type' => 'application/grpc',
-                'x-powered-by' => 'PHP/' . phpversion(),
-            ],
-            $stream,
-            $trailers,
-        );
+        return new Success(new GPBEmpty());
     }
 }

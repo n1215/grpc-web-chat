@@ -4,27 +4,15 @@ declare(strict_types=1);
 
 namespace N1215\GrpcWebChatAmp\Handlers;
 
-use Amp\ByteStream\IteratorStream;
-use Amp\ByteStream\Payload;
-use Amp\Delayed;
-use Amp\Emitter;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
-use Amp\Http\Server\Response;
-use Amp\Http\Server\Trailers;
-use Amp\Http\Status;
-use Amp\Producer;
 use Amp\Promise;
-use Amp\Success;
-use DateTime;
-use Google\Protobuf\Timestamp;
+use Google\Protobuf\GPBEmpty;
 use GrpcWebChat\ChatMessage;
-use N1215\GrpcWebChatAmp\Grpc\LengthPrefixedMessage;
+use N1215\GrpcWebChatAmp\Grpc\ResponseFactory;
+use N1215\GrpcWebChatAmp\Grpc\ServerStreamWriter;
 use Psr\Log\LoggerInterface;
-
 use Rx\ObservableInterface;
-
-use function Amp\call;
 
 /**
  * Class SubscribeRequestHandler
@@ -32,66 +20,35 @@ use function Amp\call;
  */
 class SubscribeRequestHandler implements RequestHandler
 {
-    /**
-     * SubscribeRequestHandler constructor.
-     * @param ObservableInterface<ChatMessage> $chatMessageStream
-     * @param LoggerInterface $logger
-     */
     public function __construct(
         private ObservableInterface $chatMessageStream,
+        private ResponseFactory $responseFactory,
         private LoggerInterface $logger
-    ) {}
-
-    /**
-     * @param Request $request
-     * @return Promise
-     */
-    public function handleRequest(Request $request): Promise
-    {
-        return call([$this, 'handle'], $request);
+    ) {
     }
 
-    /**
-     * @param Request $request
-     * @return Response
-     * @throws \Amp\Http\InvalidHeaderException
-     */
-    public function handle(Request $request): Response
+    public function handleRequest(Request $request): Promise
     {
-        $trailers = new Trailers(
-            new Success(
-                [
-                    'grpc-status' => '0',
-                    'grpc-message' => 'OK'
-                ]
-            ),
-            ['grpc-stats', 'grpc-message']
-        );
+        $streamWriter = new ServerStreamWriter();
 
-        $emitter = new Emitter();
-        $stream = new Payload(new IteratorStream($emitter->iterate()));
+        $this->service(new GPBEmpty(), $streamWriter);
 
+        return $this->responseFactory->success($streamWriter->getStream());
+    }
+
+    private function service(GPBEmpty $request, ServerStreamWriter $streamWriter): void
+    {
         $this->chatMessageStream
             ->subscribe(
-                function (ChatMessage $chatMessage) use ($emitter) {
+                function (ChatMessage $chatMessage) use ($streamWriter) {
                     $this->logger->debug("emit", [$chatMessage->getBody()]);
-                    $emitter->emit((new LengthPrefixedMessage($chatMessage))->serializeToString());
+                    $streamWriter->write($chatMessage);
                 },
                 null,
-                function () use ($emitter) {
+                function () use ($streamWriter) {
                     $this->logger->debug("complete");
-                    $emitter->complete();
+                    $streamWriter->complete();
                 }
             );
-
-        return new Response(
-            Status::OK,
-            [
-                'content-type' => 'application/grpc',
-                'x-powered-by' => 'PHP/' . phpversion(),
-            ],
-            $stream,
-            $trailers,
-        );
     }
 }
