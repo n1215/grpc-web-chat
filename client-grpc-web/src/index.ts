@@ -98,6 +98,6 @@ window.onload = () => {
     console.log('status', status)
   })
   chatMessageStream.on('end', () => {
-    console.log('stream end')
+    console.log('stream end', new Date())
   })
 }
