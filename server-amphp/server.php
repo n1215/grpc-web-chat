@@ -8,6 +8,7 @@ use N1215\GrpcWebChatAmp\Grpc\RequestBodyDeserializer;
 use N1215\GrpcWebChatAmp\Grpc\ResponseFactory;
 use N1215\GrpcWebChatAmp\Handlers\SendMessageRequestHandler;
 use N1215\GrpcWebChatAmp\Handlers\SubscribeRequestHandler;
+use N1215\GrpcWebChatAmp\Service\ChatService;
 
 Amp\Loop::run(
     function () {
@@ -25,25 +26,27 @@ Amp\Loop::run(
             Amp\Socket\Server::listen('[::]:1338', $context),
         ];
 
-        $requestBodyDeserializer = new RequestBodyDeserializer();
-        $responseFactory = new ResponseFactory();
-
-        $logHandler = new \Amp\Log\StreamHandler(new Amp\ByteStream\ResourceOutputStream(\STDOUT));
-        $logHandler->setFormatter(new \Amp\Log\ConsoleFormatter());
+        $logHandler = new Amp\Log\StreamHandler(new Amp\ByteStream\ResourceOutputStream(STDOUT));
+        $logHandler->setFormatter(new Amp\Log\ConsoleFormatter());
         $logger = new Monolog\Logger('server');
         $logger->pushHandler($logHandler);
 
+        $requestBodyDeserializer = new RequestBodyDeserializer();
+        $responseFactory = new ResponseFactory();
         $router = new Amp\Http\Server\Router();
-        $chatMessageSubject = new Rx\Subject\Subject();
+        $chatService = new ChatService(
+            new Rx\Subject\Subject(),
+            $logger
+        );
         $router->addRoute(
             'POST',
             '/GrpcWebChat.Chat/SendMessage',
-            new SendMessageRequestHandler($chatMessageSubject, $requestBodyDeserializer, $responseFactory, $logger)
+            new SendMessageRequestHandler($chatService, $requestBodyDeserializer, $responseFactory)
         );
         $router->addRoute(
             'POST',
             '/GrpcWebChat.Chat/Subscribe',
-            new SubscribeRequestHandler($chatMessageSubject, $responseFactory, $logger)
+            new SubscribeRequestHandler($chatService, $responseFactory)
         );
 
         $server = new Amp\Http\Server\HttpServer(

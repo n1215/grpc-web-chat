@@ -16,6 +16,11 @@ use function Amp\call;
  */
 class RequestBodyDeserializer
 {
+    /**
+     * @param Request $request
+     * @param Message $message
+     * @return Promise<void>
+     */
     public function deserialize(Request $request, Message $message): Promise
     {
         return call(

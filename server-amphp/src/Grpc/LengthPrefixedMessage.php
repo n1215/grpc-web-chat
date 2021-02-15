@@ -12,23 +12,10 @@ use Google\Protobuf\Internal\Message;
  */
 class LengthPrefixedMessage
 {
-    /**
-     * @var Message
-     */
-    private Message $message;
-
-    /**
-     * LengthPrefixedMessage constructor.
-     * @param Message $message
-     */
-    public function __construct(Message $message)
+    public function __construct(private Message $message)
     {
-        $this->message = $message;
     }
 
-    /**
-     * @return string
-     */
     public function serializeToString(): string
     {
         $serializedMessage = $this->message->serializeToString();
@@ -37,10 +24,6 @@ class LengthPrefixedMessage
             . $serializedMessage;
     }
 
-    /**
-     * @param string $binaryLengthPrefixedMessage
-     * @return string
-     */
     public static function unwrap(string $binaryLengthPrefixedMessage): string
     {
         return substr($binaryLengthPrefixedMessage, 5);
