@@ -18,10 +18,10 @@ openssl x509 -in ca.crt -text -noout
 openssl genrsa -out server.key 2048
 
 # 署名要求
-openssl req -new -sha256 -key server.key -config csr.conf -out server.csr
+openssl req -new -sha256 -key server.key -out server.csr -config csr.conf -extensions v3_req
 
 # 証明書
-openssl x509 -req -sha256 -days 825 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+openssl x509 -req -sha256 -days 825 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -extfile csr.conf -extensions v3_req
 
 # 証明書検証
 openssl x509 -in server.crt -text -noout

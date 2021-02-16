@@ -12,7 +12,7 @@ use N1215\GrpcWebChatAmp\Service\ChatService;
 
 Amp\Loop::run(
     function () {
-        $cert = new Amp\Socket\Certificate('/etc/certs/server.crt', '/etc/certs/server.key');
+        $cert = new Amp\Socket\Certificate(__DIR__ . '/certs/server.crt', __DIR__ . '/certs/server.key');
         $context = (new Amp\Socket\BindContext())
             ->withTlsContext(
                 (new Amp\Socket\ServerTlsContext())

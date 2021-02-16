@@ -11,14 +11,14 @@ services:
       - ./protos:/app/Protos
     command: ["dotnet", "watch", "run"]
 
-  envoy:
+  amphp-proxy:
     image: envoyproxy/envoy:v1.17-latest
     ports:
       - 9901:9901
       - 9000:9000
     volumes:
-      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
-      - ./certs:/etc/certs:ro
+      - ./server-amphp/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./server-amphp/certs:/etc/certs:ro
     command:
       - "/usr/local/bin/envoy"
       - "--bootstrap-version"
@@ -31,7 +31,6 @@ services:
       - 1338:1338
     volumes:
       - ./server-amphp:/var/www
-      - ./certs:/etc/certs:ro
 
   protoc:
     image: namely/protoc-all
