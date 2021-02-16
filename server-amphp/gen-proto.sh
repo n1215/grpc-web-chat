@@ -1,0 +1,1 @@
+docker-compose run --entrypoint "/usr/local/bin/protoc" protoc -I . -I /opt/include ./chat.proto --php_out=/out/grpc-php --grpc_out=/out/grpc-php --plugin=protoc-gen-grpc=/usr/local/bin/grpc_php_plugin
