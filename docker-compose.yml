@@ -3,19 +3,22 @@ services:
   dotnet:
     image: mcr.microsoft.com/dotnet/sdk:5.0-focal
     ports:
-      - 5000:5000
-      - 5001:5001
+      - "5000:5000"
+      - "5001:5001"
     working_dir: /app
     volumes:
       - ./server-dotnet:/app
-      - ./protos:/app/Protos
-    command: ["dotnet", "watch", "run"]
+      - ./protos:/app/Protos:ro
+    command:
+      - "dotnet"
+      - "watch"
+      - "run"
 
   amphp-proxy:
     image: envoyproxy/envoy:v1.17-latest
     ports:
-      - 9901:9901
-      - 9000:9000
+      - "9901:9901"
+      - "9000:9000"
     volumes:
       - ./server-amphp/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./server-amphp/certs:/etc/certs:ro
@@ -25,17 +28,31 @@ services:
       - "2"
       - "-c"
       - "/etc/envoy/envoy.yaml"
+
   amphp:
     build: ./server-amphp
     ports:
-      - 1338:1338
+      - "1338:1338"
     volumes:
       - ./server-amphp:/var/www
+
+  client:
+    image: node:14.15.1-slim
+    ports:
+      - "8080:8080"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    working_dir: /app
+    volumes:
+      - ./client-grpc-web-text:/app:cached
+    command:
+      - "npm"
+      - "run"
+      - "serve"
 
   protoc:
     image: namely/protoc-all
     volumes:
       - ./protos:/defs
       - ./client-grpc-web-text/src/pb-web:/out/grpc-web-text
-      - ./client-grpc-web/src/pb-web:/out/grpc-web
       - ./server-amphp/lib:/out/grpc-php

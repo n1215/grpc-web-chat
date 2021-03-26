@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+# コンテナを起動
+function up {
+  docker-compose up -d $@
+}
+
+# コンテナ停止
+function down {
+  docker-compose down
+}
+
+# アプリケーション初期化
+function init {
+  echo "Stating Initialization..."
+
+  echo "Install PHP server dependencies..."
+  docker-compose run amphp composer install
+
+  echo "Install client dependencies..."
+  docker-compose run client npm ci
+
+  echo "Generate code from .proto file"
+  proto_codegen
+
+  echo "Initialization completed!"
+}
+
+# コンテナの中に入る
+function login {
+  container=${1:-amphp}
+
+  echo "Attempt to login ${container} container..."
+  docker-compose exec ${container} bash
+}
+
+# ログを表示
+function logs {
+  docker-compose logs $1
+}
+
+# .protoファイルからコード生成
+function proto_codegen() {
+  dir=$(dirname "$0")
+  bash ${dir}/client-grpc-web-text/gen-proto.sh
+  bash ${dir}/server-amphp/gen-proto.sh
+}
+
+subcommand="$1"
+shift
+
+case $subcommand in
+up)
+  up $@
+  ;;
+down)
+  down
+  ;;
+init)
+  init
+  ;;
+login)
+  login $1
+  ;;
+logs)
+  logs $1
+  ;;
+proto:codegen)
+  proto_codegen "$@"
+  ;;
+*)
+  echo "help"
+  ;;
+esac

@@ -53,18 +53,16 @@ class ChatService
      */
     public function subscribe(GPBEmpty $request, ServerStreamWriter $streamWriter): Promise
     {
-        $this->chatMessageSubject
-            ->subscribe(
-                function (ChatMessage $chatMessage) use ($streamWriter) {
-                    $this->logger->debug("emit", [$chatMessage->getBody()]);
-                    $streamWriter->write($chatMessage);
-                },
-                null,
-                function () use ($streamWriter) {
-                    $this->logger->debug("complete");
-                    $streamWriter->complete();
-                }
-            );
+        $this->chatMessageSubject->subscribe(
+            function (ChatMessage $chatMessage) use ($streamWriter) {
+                $this->logger->debug("emit", [$chatMessage->getBody()]);
+                $streamWriter->write($chatMessage);
+            },
+            null,
+            function () use ($streamWriter) {
+                $streamWriter->complete();
+            }
+        );
 
         return new Success();
     }

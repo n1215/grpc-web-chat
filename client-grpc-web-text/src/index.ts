@@ -33,7 +33,12 @@ const initialModel = (): Model => {
   }
 }
 const model = initialModel()
-const chatClient = new ChatClient('https://localhost:9000')
+const server = new URLSearchParams(location.search).get('server');
+const serverUrl = server == 'csharp'
+  ? 'https://localhost:5001'
+  : 'https://localhost:9000';
+
+const chatClient = new ChatClient(serverUrl)
 
 window.onload = () => {
   const $views = {
